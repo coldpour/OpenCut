@@ -142,6 +142,51 @@ Before you begin, ensure you have the following installed on your system:
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
 
+## Auto Live Clip MVP
+
+Auto Live Clip builds an editable timeline from:
+
+- one camera video
+- one separate master audio mix
+
+### Run analyzer service
+
+From repository root:
+
+```bash
+PYTHONPATH=apps/analyzer python3 -m app.main
+```
+
+Analyzer default URL: `http://127.0.0.1:8765`
+
+### Run web app
+
+```bash
+cd apps/web
+bun run dev
+```
+
+### Use in editor
+
+1. Import one video and one master audio file in **Media**.
+2. Open **Auto Live Clip** tab in the left tools panel.
+3. Select source video + master audio, keep defaults or tweak options.
+4. Click **Analyze & Build Timeline**.
+5. Review segment explanations and click any segment to jump/select it on timeline.
+6. Export with **Export 1080p**, **Export 2K**, or **Export 4K**.
+
+### Privacy note
+
+- Auto Live Clip favors stage-centered framing and de-prioritizes crowd regions.
+- Crowd blur is only applied for segments flagged as crowd-risk.
+
+### Dev notes
+
+- Explainability metadata is stored on each scene at:
+  - `scene.autoLiveClip.analysis`
+- Segment entries persist `trackId` + `elementId` so clicking explanations can re-select timeline cuts.
+- Multi-cam can extend by replacing one-segment `source` with angle-scored candidates per segment while reusing the same metadata shape.
+
 ## Contributing
 
 We welcome contributions! While we're actively developing and refactoring certain areas, there are plenty of opportunities to contribute effectively.

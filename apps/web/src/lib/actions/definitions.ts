@@ -137,6 +137,26 @@ export const ACTIONS = {
 		category: "history",
 		defaultShortcuts: ["ctrl+shift+z", "ctrl+y"],
 	},
+	"auto-live-clip-analyze-build": {
+		description: "Analyze media and build Auto Live Clip timeline",
+		category: "controls",
+	},
+	"auto-live-clip-strict-sync": {
+		description: "Strictly sync master audio and camera video",
+		category: "controls",
+	},
+	"auto-live-clip-export-1080p": {
+		description: "Export Auto Live Clip at 1080p",
+		category: "controls",
+	},
+	"auto-live-clip-export-2k": {
+		description: "Export Auto Live Clip at 2K",
+		category: "controls",
+	},
+	"auto-live-clip-export-4k": {
+		description: "Export Auto Live Clip at 4K",
+		category: "controls",
+	},
 } as const satisfies Record<string, TActionDefinition>;
 
 export type TAction = keyof typeof ACTIONS;

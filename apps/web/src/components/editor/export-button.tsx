@@ -14,7 +14,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/utils/ui";
-import { getExportMimeType, getExportFileExtension } from "@/lib/export";
+import {
+	buildExportDownloadFilename,
+	formatBitrateKbps,
+	formatBitrateMbps,
+	formatMegabytesPerMinute,
+	getExportMimeType,
+	getExportQualityStats,
+} from "@/lib/export";
 import { Check, Copy, Download, RotateCcw } from "lucide-react";
 import {
 	EXPORT_FORMAT_VALUES,
@@ -89,6 +96,17 @@ function ExportPopover({
 	const [progress, setProgress] = useState(0);
 	const [exportResult, setExportResult] = useState<ExportResult | null>(null);
 	const cancelRequestedRef = useRef(false);
+	const canvasSize = activeProject?.settings.canvasSize ?? {
+		width: 1920,
+		height: 1080,
+	};
+	const fps = activeProject?.settings.fps ?? 30;
+	const selectedQualityStats = getExportQualityStats({
+		format,
+		quality,
+		width: canvasSize.width,
+		height: canvasSize.height,
+	});
 
 	const handleExport = async () => {
 		if (!activeProject) return;
@@ -121,13 +139,15 @@ function ExportPopover({
 
 		if (result.success && result.buffer) {
 			const mimeType = getExportMimeType({ format });
-			const extension = getExportFileExtension({ format });
 			const blob = new Blob([result.buffer], { type: mimeType });
 			const url = URL.createObjectURL(blob);
 
 			const a = document.createElement("a");
 			a.href = url;
-			a.download = `${activeProject.metadata.name}${extension}`;
+			a.download = buildExportDownloadFilename({
+				projectName: activeProject.metadata.name,
+				format,
+			});
 			document.body.appendChild(a);
 			a.click();
 			document.body.removeChild(a);
@@ -191,6 +211,13 @@ function ExportPopover({
 									</PropertyGroup>
 
 									<PropertyGroup title="Quality" defaultExpanded={false}>
+										<p className="text-muted-foreground mb-3 text-xs">
+											{canvasSize.width}x{canvasSize.height} @ {fps} fps ·{" "}
+											{selectedQualityStats.videoCodec} video
+											{includeAudio
+												? ` + ${selectedQualityStats.audioCodec} audio`
+												: " · no audio"}
+										</p>
 										<RadioGroup
 											value={quality}
 											onValueChange={(value) => {
@@ -199,25 +226,44 @@ function ExportPopover({
 												}
 											}}
 										>
-											<div className="flex items-center space-x-2">
-												<RadioGroupItem value="low" id="low" />
-												<Label htmlFor="low">Low - Smallest file size</Label>
-											</div>
-											<div className="flex items-center space-x-2">
-												<RadioGroupItem value="medium" id="medium" />
-												<Label htmlFor="medium">Medium - Balanced</Label>
-											</div>
-											<div className="flex items-center space-x-2">
-												<RadioGroupItem value="high" id="high" />
-												<Label htmlFor="high">High - Recommended</Label>
-											</div>
-											<div className="flex items-center space-x-2">
-												<RadioGroupItem value="very_high" id="very_high" />
-												<Label htmlFor="very_high">
-													Very High - Largest file size
-												</Label>
-											</div>
+											{EXPORT_QUALITY_VALUES.map((qualityValue) => {
+												const optionId = `export-quality-${qualityValue}`;
+												const stats = getExportQualityStats({
+													format,
+													quality: qualityValue,
+													width: canvasSize.width,
+													height: canvasSize.height,
+												});
+												return (
+													<div
+														key={qualityValue}
+														className="flex items-start space-x-2"
+													>
+														<RadioGroupItem
+															value={qualityValue}
+															id={optionId}
+															className="mt-0.5"
+														/>
+														<Label
+															htmlFor={optionId}
+															className="flex flex-col gap-0.5"
+														>
+															<span>{getQualityLabel(qualityValue)}</span>
+															<span className="text-muted-foreground text-xs font-normal">
+																Video {formatBitrateMbps(stats.videoBitrateBps)}
+																{includeAudio &&
+																	` · Audio ${formatBitrateKbps(stats.audioBitrateBps)}`}
+																{` · ${formatMegabytesPerMinute(stats.estimatedMegabytesPerMinute)}`}
+															</span>
+														</Label>
+													</div>
+												);
+											})}
 										</RadioGroup>
+										<p className="text-muted-foreground mt-3 text-xs">
+											Estimated size depends on content motion/detail. Bitrates
+											are targets, not guarantees.
+										</p>
 									</PropertyGroup>
 
 									<PropertyGroup title="Audio" defaultExpanded={false}>
@@ -279,6 +325,19 @@ function isExportFormat(value: string): value is ExportFormat {
 
 function isExportQuality(value: string): value is ExportQuality {
 	return EXPORT_QUALITY_VALUES.some((qualityValue) => qualityValue === value);
+}
+
+function getQualityLabel(quality: ExportQuality): string {
+	switch (quality) {
+		case "low":
+			return "Low (smallest files)";
+		case "medium":
+			return "Medium (balanced)";
+		case "high":
+			return "High (recommended)";
+		case "very_high":
+			return "Very High (largest files)";
+	}
 }
 
 function ExportError({

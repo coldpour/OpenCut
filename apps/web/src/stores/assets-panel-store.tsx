@@ -11,6 +11,7 @@ import {
 	Settings01Icon,
 	SlidersHorizontalIcon,
 	ColorsIcon,
+	MusicNote01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
@@ -24,6 +25,7 @@ export const TAB_KEYS = [
 	"captions",
 	"filters",
 	"adjustment",
+	"auto-live-clip",
 	"settings",
 ] as const;
 
@@ -71,6 +73,10 @@ export const tabs = {
 	adjustment: {
 		icon: createHugeiconsIcon({ icon: SlidersHorizontalIcon }),
 		label: "Adjustment",
+	},
+	"auto-live-clip": {
+		icon: createHugeiconsIcon({ icon: MusicNote01Icon }),
+		label: "Auto Live Clip",
 	},
 	settings: {
 		icon: createHugeiconsIcon({ icon: Settings01Icon }),

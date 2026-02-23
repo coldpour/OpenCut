@@ -29,7 +29,6 @@ import {
 	PropertyItemLabel,
 	PropertyItemValue,
 } from "@/components/editor/panels/properties/property-item";
-import { ColorPicker } from "@/components/ui/color-picker";
 
 export function SettingsView() {
 	return <ProjectSettingsTabs />;

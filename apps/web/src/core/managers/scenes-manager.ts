@@ -257,15 +257,41 @@ export class ScenesManager {
 	}
 
 	private notify(): void {
-		this.listeners.forEach((fn) => fn());
+		this.listeners.forEach((fn) => {
+			fn();
+		});
 	}
 
 	updateSceneTracks({ tracks }: { tracks: TimelineTrack[] }): void {
+		this.updateActiveScene({
+			updates: {
+				tracks,
+			},
+		});
+	}
+
+	setActiveSceneAutoLiveClip({
+		autoLiveClip,
+	}: {
+		autoLiveClip: TScene["autoLiveClip"];
+	}): void {
+		this.updateActiveScene({
+			updates: {
+				autoLiveClip,
+			},
+		});
+	}
+
+	private updateActiveScene({
+		updates,
+	}: {
+		updates: Partial<Pick<TScene, "tracks" | "autoLiveClip">>;
+	}): void {
 		if (!this.active) return;
 
 		const updatedScene: TScene = {
 			...this.active,
-			tracks,
+			...updates,
 			updatedAt: new Date(),
 		};
 

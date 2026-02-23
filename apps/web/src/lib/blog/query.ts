@@ -16,6 +16,15 @@ const url =
 	process.env.NEXT_PUBLIC_MARBLE_API_URL ?? "https://api.marblecms.com";
 const key = process.env.MARBLE_WORKSPACE_KEY ?? "cmd4iw9mm0006l804kwqv0k46";
 
+const EMPTY_PAGINATION = {
+	limit: 0,
+	currpage: 1,
+	nextPage: null,
+	prevPage: null,
+	totalItems: 0,
+	totalPages: 0,
+} as const;
+
 async function fetchFromMarble<T>({
 	endpoint,
 }: {
@@ -36,11 +45,25 @@ async function fetchFromMarble<T>({
 }
 
 export async function getPosts() {
-	return fetchFromMarble<MarblePostList>({ endpoint: "posts" });
+	try {
+		return await fetchFromMarble<MarblePostList>({ endpoint: "posts" });
+	} catch {
+		return {
+			posts: [],
+			pagination: EMPTY_PAGINATION,
+		};
+	}
 }
 
 export async function getTags() {
-	return fetchFromMarble<MarbleTagList>({ endpoint: "tags" });
+	try {
+		return await fetchFromMarble<MarbleTagList>({ endpoint: "tags" });
+	} catch {
+		return {
+			tags: [],
+			pagination: EMPTY_PAGINATION,
+		};
+	}
 }
 
 export async function getSinglePost({ slug }: { slug: string }) {
@@ -48,11 +71,25 @@ export async function getSinglePost({ slug }: { slug: string }) {
 }
 
 export async function getCategories() {
-	return fetchFromMarble<MarbleCategoryList>({ endpoint: "categories" });
+	try {
+		return await fetchFromMarble<MarbleCategoryList>({ endpoint: "categories" });
+	} catch {
+		return {
+			categories: [],
+			pagination: EMPTY_PAGINATION,
+		};
+	}
 }
 
 export async function getAuthors() {
-	return fetchFromMarble<MarbleAuthorList>({ endpoint: "authors" });
+	try {
+		return await fetchFromMarble<MarbleAuthorList>({ endpoint: "authors" });
+	} catch {
+		return {
+			authors: [],
+			pagination: EMPTY_PAGINATION,
+		};
+	}
 }
 
 export async function processHtmlContent({

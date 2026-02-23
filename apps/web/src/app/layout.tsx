@@ -6,9 +6,6 @@ import { TooltipProvider } from "../components/ui/tooltip";
 import { baseMetaData } from "./metadata";
 import { BotIdClient } from "botid/client";
 import { webEnv } from "@opencut/env/web";
-import { Inter } from "next/font/google";
-
-const siteFont = Inter({ subsets: ["latin"] });
 
 export const metadata = baseMetaData;
 
@@ -29,7 +26,7 @@ export default function RootLayout({
 			<head>
 				<BotIdClient protect={protectedRoutes} />
 			</head>
-			<body className={`${siteFont.className} font-sans antialiased`}>
+			<body className="font-sans antialiased">
 				<ThemeProvider
 					attribute="class"
 					defaultTheme="system"

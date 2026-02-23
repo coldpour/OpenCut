@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { type Tab, useAssetsPanelStore } from "@/stores/assets-panel-store";
 import { TabBar } from "./tabbar";
 import { Captions } from "./views/captions";
+import { AutoLiveClipView } from "./views/auto-live-clip";
 import { MediaView } from "./views/media";
 import { SettingsView } from "./views/settings";
 import { SoundsView } from "./views/sounds";
@@ -39,6 +40,7 @@ export function AssetsPanel() {
 				Adjustment view coming soon...
 			</div>
 		),
+		"auto-live-clip": <AutoLiveClipView />,
 		settings: <SettingsView />,
 	};
 

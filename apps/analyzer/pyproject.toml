@@ -1,0 +1,10 @@
+[project]
+name = "opencut-auto-live-clip-analyzer"
+version = "0.1.0"
+description = "Local analyzer and renderer service for OpenCut Auto Live Clip"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"

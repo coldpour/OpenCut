@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: opencut-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opencut
+      POSTGRES_USER: opencut
+      POSTGRES_PASSWORD: opencut
+    ports:
+      - "5432:5432"
+    volumes:
+      - opencut-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opencut -d opencut"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: opencut-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - opencut-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-http:
+    image: hiett/serverless-redis-http:latest
+    container_name: opencut-redis-http
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: example_token_here
+      SRH_CONNECTION_STRING: redis://redis:6379
+    ports:
+      - "8079:80"
+
+volumes:
+  opencut-postgres-data:
+  opencut-redis-data:

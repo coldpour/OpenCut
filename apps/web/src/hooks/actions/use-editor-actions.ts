@@ -5,12 +5,15 @@ import { useActionHandler } from "@/hooks/actions/use-action-handler";
 import { useEditor } from "../use-editor";
 import { useElementSelection } from "../timeline/element/use-element-selection";
 import { getElementsAtTime } from "@/lib/timeline";
+import { useAutoLiveClipStore } from "@/stores/auto-live-clip-store";
 
 export function useEditorActions() {
 	const editor = useEditor();
 	const activeProject = editor.project.getActive();
 	const { selectedElements, setElementSelection } = useElementSelection();
 	const { clipboard, setClipboard, toggleSnapping } = useTimelineStore();
+	const { analyzeAndBuildTimeline, strictSyncTimeline, exportPreset } =
+		useAutoLiveClipStore();
 
 	useActionHandler(
 		"toggle-play",
@@ -307,6 +310,46 @@ export function useEditorActions() {
 		"redo",
 		() => {
 			editor.command.redo();
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"auto-live-clip-strict-sync",
+		() => {
+			void strictSyncTimeline({ editor });
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"auto-live-clip-analyze-build",
+		() => {
+			void analyzeAndBuildTimeline({ editor });
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"auto-live-clip-export-1080p",
+		() => {
+			void exportPreset({ editor, preset: "1080p" });
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"auto-live-clip-export-2k",
+		() => {
+			void exportPreset({ editor, preset: "2k" });
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"auto-live-clip-export-4k",
+		() => {
+			void exportPreset({ editor, preset: "4k" });
 		},
 		undefined,
 	);

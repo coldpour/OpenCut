@@ -15,3 +15,10 @@ bun.lockb
 
 # Twiggy
 .cursor/rules/file-structure.mdc
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Local analyzer runtime cache/artifacts
+apps/analyzer/.cache/

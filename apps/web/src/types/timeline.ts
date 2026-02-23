@@ -1,9 +1,12 @@
+import type { AutoLiveClipSceneMetadata } from "./auto-live-clip";
+
 export interface TScene {
 	id: string;
 	name: string;
 	isMain: boolean;
 	tracks: TimelineTrack[];
 	bookmarks: number[];
+	autoLiveClip?: AutoLiveClipSceneMetadata;
 	createdAt: Date;
 	updatedAt: Date;
 }
