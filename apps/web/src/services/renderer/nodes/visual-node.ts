@@ -1,6 +1,7 @@
 import type { CanvasRenderer } from "../canvas-renderer";
 import { BaseNode } from "./base-node";
 import type { Transform } from "@/types/timeline";
+import { getTransformAtLocalTime } from "@/lib/timeline/transform-keyframes";
 
 const VISUAL_EPSILON = 1 / 1000;
 
@@ -33,31 +34,39 @@ export abstract class VisualNode<
 		source,
 		sourceWidth,
 		sourceHeight,
+		time,
 	}: {
 		renderer: CanvasRenderer;
 		source: CanvasImageSource;
 		sourceWidth: number;
 		sourceHeight: number;
+		time: number;
 	}): void {
 		renderer.context.save();
 
 		const { transform, opacity } = this.params;
+		const resolvedTransform = getTransformAtLocalTime({
+			transform,
+			localTime: this.getLocalTime(time),
+		});
 		const containScale = Math.min(
 			renderer.width / sourceWidth,
 			renderer.height / sourceHeight,
 		);
-		const scaledWidth = sourceWidth * containScale * transform.scale;
-		const scaledHeight = sourceHeight * containScale * transform.scale;
-		const x = renderer.width / 2 + transform.position.x - scaledWidth / 2;
-		const y = renderer.height / 2 + transform.position.y - scaledHeight / 2;
+		const scaledWidth = sourceWidth * containScale * resolvedTransform.scale;
+		const scaledHeight = sourceHeight * containScale * resolvedTransform.scale;
+		const x =
+			renderer.width / 2 + resolvedTransform.position.x - scaledWidth / 2;
+		const y =
+			renderer.height / 2 + resolvedTransform.position.y - scaledHeight / 2;
 
 		renderer.context.globalAlpha = opacity;
 
-		if (transform.rotate !== 0) {
+		if (resolvedTransform.rotate !== 0) {
 			const centerX = x + scaledWidth / 2;
 			const centerY = y + scaledHeight / 2;
 			renderer.context.translate(centerX, centerY);
-			renderer.context.rotate((transform.rotate * Math.PI) / 180);
+			renderer.context.rotate((resolvedTransform.rotate * Math.PI) / 180);
 			renderer.context.translate(-centerX, -centerY);
 		}
 

@@ -43,6 +43,7 @@ export class ImageNode extends VisualNode<ImageNodeParams> {
 
 		this.renderVisual({
 			renderer,
+			time,
 			source: this.image,
 			sourceWidth: mediaW,
 			sourceHeight: mediaH,

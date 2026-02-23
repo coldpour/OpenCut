@@ -34,7 +34,7 @@ export function PropertiesPanel() {
 						if (element.type === "video" || element.type === "image") {
 							return (
 								<div key={element.id}>
-									<VideoProperties _element={element} />
+									<VideoProperties element={element} trackId={track.id} />
 								</div>
 							);
 						}

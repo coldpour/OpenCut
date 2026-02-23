@@ -53,6 +53,16 @@ export interface Transform {
 		y: number;
 	};
 	rotate: number;
+	keyframes?: TransformKeyframe[];
+}
+
+export interface TransformKeyframe {
+	time: number;
+	scale: number;
+	position: {
+		x: number;
+		y: number;
+	};
 }
 
 interface BaseAudioElement extends BaseTimelineElement {

@@ -26,6 +26,7 @@ export class VideoNode extends VisualNode<VideoNodeParams> {
 		if (frame) {
 			this.renderVisual({
 				renderer,
+				time,
 				source: frame.canvas,
 				sourceWidth: frame.canvas.width,
 				sourceHeight: frame.canvas.height,
