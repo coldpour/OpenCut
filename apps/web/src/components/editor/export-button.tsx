@@ -16,9 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/utils/ui";
 import {
 	buildExportDownloadFilename,
+	estimateExportFileSizeBytes,
+	formatFileSizeEstimate,
 	formatBitrateKbps,
 	formatBitrateMbps,
-	formatMegabytesPerMinute,
 	getExportMimeType,
 	getExportQualityStats,
 } from "@/lib/export";
@@ -101,6 +102,7 @@ function ExportPopover({
 		height: 1080,
 	};
 	const fps = activeProject?.settings.fps ?? 30;
+	const projectDurationSeconds = Math.max(0, activeProject?.metadata.duration ?? 0);
 	const selectedQualityStats = getExportQualityStats({
 		format,
 		quality,
@@ -217,6 +219,17 @@ function ExportPopover({
 											{includeAudio
 												? ` + ${selectedQualityStats.audioCodec} audio`
 												: " · no audio"}
+											{projectDurationSeconds > 0 &&
+												` · ${formatFileSizeEstimate(
+													estimateExportFileSizeBytes({
+														durationSeconds: projectDurationSeconds,
+														videoBitrateBps:
+															selectedQualityStats.videoBitrateBps,
+														audioBitrateBps:
+															selectedQualityStats.audioBitrateBps,
+														includeAudio,
+													}),
+												)}`}
 										</p>
 										<RadioGroup
 											value={quality}
@@ -233,6 +246,12 @@ function ExportPopover({
 													quality: qualityValue,
 													width: canvasSize.width,
 													height: canvasSize.height,
+												});
+												const estimatedSizeBytes = estimateExportFileSizeBytes({
+													durationSeconds: projectDurationSeconds,
+													videoBitrateBps: stats.videoBitrateBps,
+													audioBitrateBps: stats.audioBitrateBps,
+													includeAudio,
 												});
 												return (
 													<div
@@ -253,7 +272,8 @@ function ExportPopover({
 																Video {formatBitrateMbps(stats.videoBitrateBps)}
 																{includeAudio &&
 																	` · Audio ${formatBitrateKbps(stats.audioBitrateBps)}`}
-																{` · ${formatMegabytesPerMinute(stats.estimatedMegabytesPerMinute)}`}
+																{projectDurationSeconds > 0 &&
+																	` · ${formatFileSizeEstimate(estimatedSizeBytes)}`}
 															</span>
 														</Label>
 													</div>
@@ -261,8 +281,8 @@ function ExportPopover({
 											})}
 										</RadioGroup>
 										<p className="text-muted-foreground mt-3 text-xs">
-											Estimated size depends on content motion/detail. Bitrates
-											are targets, not guarantees.
+											File size estimate is based on project duration and target
+											bitrate. Actual size varies with content motion/detail.
 										</p>
 									</PropertyGroup>
 

@@ -115,3 +115,29 @@ export function formatBitrateKbps(bps: number): string {
 export function formatMegabytesPerMinute(megabytesPerMinute: number): string {
 	return `~${megabytesPerMinute.toFixed(1)} MB/min`;
 }
+
+export function estimateExportFileSizeBytes({
+	durationSeconds,
+	videoBitrateBps,
+	audioBitrateBps,
+	includeAudio,
+}: {
+	durationSeconds: number;
+	videoBitrateBps: number;
+	audioBitrateBps: number;
+	includeAudio: boolean;
+}): number {
+	const duration = Math.max(0, durationSeconds);
+	const totalBitrateBps =
+		videoBitrateBps + (includeAudio ? audioBitrateBps : 0);
+	return Math.round((totalBitrateBps / 8) * duration);
+}
+
+export function formatFileSizeEstimate(bytes: number): string {
+	if (!Number.isFinite(bytes) || bytes <= 0) return "~0 MB";
+	const mb = bytes / 1_000_000;
+	if (mb < 1000) {
+		return `~${mb.toFixed(1)} MB`;
+	}
+	return `~${(mb / 1000).toFixed(2)} GB`;
+}

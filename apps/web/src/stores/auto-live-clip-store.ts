@@ -184,8 +184,8 @@ export const useAutoLiveClipStore = create<AutoLiveClipState>((set, get) => ({
 			const options = buildOptions({
 				clipMode: "whole_song",
 				maxClipMinutes: null,
-				privacyProtectCrowd: get().privacyProtectCrowd,
-				preferLeadSinger: get().preferLeadSinger,
+				privacyProtectCrowd: true,
+				preferLeadSinger: true,
 			});
 
 			set({ progressStep: "Hashing media for sync cache..." });
@@ -264,10 +264,10 @@ export const useAutoLiveClipStore = create<AutoLiveClipState>((set, get) => ({
 				expectedType: "audio",
 			});
 			const options = buildOptions({
-				clipMode: get().clipMode,
-				maxClipMinutes: get().maxClipMinutes,
-				privacyProtectCrowd: get().privacyProtectCrowd,
-				preferLeadSinger: get().preferLeadSinger,
+				clipMode: "whole_song",
+				maxClipMinutes: null,
+				privacyProtectCrowd: true,
+				preferLeadSinger: true,
 			});
 
 			set({ progressStep: "Hashing media for analysis cache..." });
@@ -358,7 +358,7 @@ export const useAutoLiveClipStore = create<AutoLiveClipState>((set, get) => ({
 				masterAudioFile: masterAudioAsset.file,
 				analysis,
 				preset,
-				privacyProtectCrowd: get().privacyProtectCrowd,
+				privacyProtectCrowd: true,
 			});
 			const response = await fetch(result.downloadUrl);
 			if (!response.ok) {

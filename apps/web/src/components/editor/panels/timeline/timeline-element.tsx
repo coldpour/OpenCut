@@ -377,19 +377,24 @@ function ElementContent({
 	if (element.type === "audio") {
 		const audioBuffer =
 			element.sourceType === "library" ? element.buffer : undefined;
+		const uploadAudioAsset =
+			element.sourceType === "upload"
+				? mediaAssets.find((asset) => asset.id === element.mediaId)
+				: null;
 
 		const audioUrl =
 			element.sourceType === "library"
 				? element.sourceUrl
-				: mediaAssets.find((asset) => asset.id === element.mediaId)?.url;
+				: uploadAudioAsset?.url;
 
-		if (audioBuffer || audioUrl) {
+		if (audioBuffer || audioUrl || uploadAudioAsset?.file) {
 			return (
 				<div className="flex size-full items-center gap-2">
 					<div className="min-w-0 flex-1">
 						<AudioWaveform
 							audioBuffer={audioBuffer}
 							audioUrl={audioUrl}
+							audioFile={uploadAudioAsset?.file}
 							height={24}
 							className="w-full"
 						/>

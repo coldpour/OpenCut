@@ -3,6 +3,7 @@ import WaveSurfer from "wavesurfer.js";
 
 interface AudioWaveformProps {
 	audioUrl?: string;
+	audioFile?: File;
 	audioBuffer?: AudioBuffer;
 	height?: number;
 	className?: string;
@@ -41,6 +42,7 @@ function extractPeaks({
 
 export function AudioWaveform({
 	audioUrl,
+	audioFile,
 	audioBuffer,
 	height = 32,
 	className = "",
@@ -49,13 +51,21 @@ export function AudioWaveform({
 	const wavesurfer = useRef<WaveSurfer | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState(false);
+	const objectUrlRef = useRef<string | null>(null);
 
 	useEffect(() => {
 		let mounted = true;
 		const ws = wavesurfer.current;
+		let resolvedAudioUrl = audioUrl;
+
+		if (!resolvedAudioUrl && audioFile) {
+			const objectUrl = URL.createObjectURL(audioFile);
+			objectUrlRef.current = objectUrl;
+			resolvedAudioUrl = objectUrl;
+		}
 
 		const initWaveSurfer = async () => {
-			if (!waveformRef.current || (!audioUrl && !audioBuffer)) return;
+			if (!waveformRef.current || (!resolvedAudioUrl && !audioBuffer)) return;
 
 			try {
 				if (ws) {
@@ -101,8 +111,8 @@ export function AudioWaveform({
 				if (audioBuffer) {
 					const peaks = extractPeaks({ buffer: audioBuffer });
 					newWaveSurfer.load("", peaks, audioBuffer.duration);
-				} else if (audioUrl) {
-					await newWaveSurfer.load(audioUrl);
+				} else if (resolvedAudioUrl) {
+					await newWaveSurfer.load(resolvedAudioUrl);
 				}
 			} catch (err) {
 				if (mounted) {
@@ -143,8 +153,12 @@ export function AudioWaveform({
 					} catch {}
 				});
 			}
+			if (objectUrlRef.current) {
+				URL.revokeObjectURL(objectUrlRef.current);
+				objectUrlRef.current = null;
+			}
 		};
-	}, [audioUrl, audioBuffer, height]);
+	}, [audioUrl, audioFile, audioBuffer, height]);
 
 	if (error) {
 		return (
