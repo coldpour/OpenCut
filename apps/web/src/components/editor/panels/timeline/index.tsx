@@ -1,6 +1,7 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import {
 	Delete02Icon,
 	TaskAdd02Icon,
@@ -17,7 +18,7 @@ import {
 	ContextMenuTrigger,
 } from "../../../ui/context-menu";
 import { useTimelineZoom } from "@/hooks/timeline/use-timeline-zoom";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { TimelineTrackContent } from "./timeline-track";
 import { TimelinePlayhead } from "./timeline-playhead";
 import { SelectionBox } from "../../selection-box";
@@ -226,7 +227,7 @@ export function Timeline() {
 					isVisible={showSnapIndicator}
 				/>
 				<div className="flex flex-1 overflow-hidden">
-					<div className="bg-background flex w-28 shrink-0 flex-col border-r">
+					<div className="bg-background flex w-52 shrink-0 flex-col border-r">
 						<div className="bg-background flex h-4 items-center justify-between px-3">
 							<span className="opacity-0">.</span>
 						</div>
@@ -244,12 +245,14 @@ export function Timeline() {
 										{tracks.map((track) => (
 											<div
 												key={track.id}
-												className="group flex items-center px-3"
+												className="group flex items-center px-2"
 												style={{
 													height: `${getTrackHeight({ type: track.type })}px`,
 												}}
 											>
-												<div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+												<div className="flex min-w-0 flex-1 items-center gap-2">
+													<TrackNameField track={track} />
+													<div className="ml-auto flex items-center justify-end gap-2">
 													{process.env.NODE_ENV === "development" &&
 														isMainTrack(track) && (
 															<div className="bg-red-500 size-1.5 rounded-full" />
@@ -283,6 +286,7 @@ export function Timeline() {
 														/>
 													)}
 													<TrackIcon track={track} />
+													</div>
 												</div>
 											</div>
 										))}
@@ -496,6 +500,46 @@ export function Timeline() {
 				</div>
 			</div>
 		</section>
+	);
+}
+
+function TrackNameField({ track }: { track: TimelineTrack }) {
+	const editor = useEditor();
+	const [draftName, setDraftName] = useState(track.name);
+
+	useEffect(() => {
+		setDraftName(track.name);
+	}, [track.name]);
+
+	const commit = () => {
+		const nextName = draftName.trim();
+		if (!nextName || nextName === track.name) {
+			setDraftName(track.name);
+			return;
+		}
+		editor.timeline.updateTrackName({ trackId: track.id, name: nextName });
+	};
+
+	return (
+		<Input
+			value={draftName}
+			onChange={(event) => setDraftName(event.target.value)}
+			onBlur={commit}
+			onKeyDown={(event) => {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					(event.target as HTMLInputElement).blur();
+				}
+				if (event.key === "Escape") {
+					event.preventDefault();
+					setDraftName(track.name);
+					(event.target as HTMLInputElement).blur();
+				}
+			}}
+			onMouseDown={(event) => event.stopPropagation()}
+			className="h-8 min-w-0 text-xs"
+			aria-label={`${track.type} track name`}
+		/>
 	);
 }
 

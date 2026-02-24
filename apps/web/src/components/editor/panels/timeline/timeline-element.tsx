@@ -3,6 +3,7 @@
 import { useEditor } from "@/hooks/use-editor";
 import { useAssetsPanelStore } from "@/stores/assets-panel-store";
 import AudioWaveform from "./audio-waveform";
+import { VideoFilmstrip } from "./video-filmstrip";
 import { useTimelineElementResize } from "@/hooks/timeline/element/use-element-resize";
 import type { SnapPoint } from "@/hooks/timeline/use-timeline-snapping";
 import { TIMELINE_CONSTANTS } from "@/constants/timeline-constants";
@@ -159,6 +160,7 @@ export function TimelineElement({
 						hasAudio={hasAudio}
 						isMuted={isMuted}
 						mediaAssets={mediaAssets}
+						elementWidth={elementWidth}
 						onElementClick={onElementClick}
 						onElementMouseDown={onElementMouseDown}
 						handleResizeStart={handleResizeStart}
@@ -231,6 +233,7 @@ function ElementInner({
 	hasAudio,
 	isMuted,
 	mediaAssets,
+	elementWidth,
 	onElementClick,
 	onElementMouseDown,
 	handleResizeStart,
@@ -242,6 +245,7 @@ function ElementInner({
 	hasAudio: boolean;
 	isMuted: boolean;
 	mediaAssets: MediaAsset[];
+	elementWidth: number;
 	onElementClick: (e: React.MouseEvent, element: TimelineElementType) => void;
 	onElementMouseDown: (
 		e: React.MouseEvent,
@@ -273,6 +277,7 @@ function ElementInner({
 						track={track}
 						isSelected={isSelected}
 						mediaAssets={mediaAssets}
+						elementWidth={elementWidth}
 					/>
 				</div>
 
@@ -294,6 +299,7 @@ function ElementInner({
 					</div>
 				)}
 			</button>
+			<KeyframeMarkers element={element} />
 
 			{isSelected && (
 				<>
@@ -344,11 +350,13 @@ function ElementContent({
 	track,
 	isSelected,
 	mediaAssets,
+	elementWidth,
 }: {
 	element: TimelineElementType;
 	track: TimelineTrack;
 	isSelected: boolean;
 	mediaAssets: MediaAsset[];
+	elementWidth: number;
 }) {
 	if (element.type === "text") {
 		return (
@@ -421,7 +429,7 @@ function ElementContent({
 
 	if (
 		mediaAsset.type === "image" ||
-		(mediaAsset.type === "video" && mediaAsset.thumbnailUrl)
+		mediaAsset.type === "video"
 	) {
 		const trackHeight = getTrackHeight({ type: track.type });
 		const tileWidth = trackHeight * (16 / 9);
@@ -433,18 +441,39 @@ function ElementContent({
 				<div
 					className={`relative size-full ${isSelected ? "bg-primary" : "bg-transparent"}`}
 				>
-					<div
-						className="absolute right-0 left-0"
-						style={{
-							backgroundImage: imageUrl ? `url(${imageUrl})` : "none",
-							backgroundRepeat: "repeat-x",
-							backgroundSize: `${tileWidth}px ${trackHeight}px`,
-							backgroundPosition: "left center",
-							pointerEvents: "none",
-							top: isSelected ? "0.25rem" : "0rem",
-							bottom: isSelected ? "0.25rem" : "0rem",
-						}}
-					/>
+					{mediaAsset.type === "video" ? (
+						<div
+							className="absolute right-0 left-0 overflow-hidden"
+							style={{
+								pointerEvents: "none",
+								top: isSelected ? "0.25rem" : "0rem",
+								bottom: isSelected ? "0.25rem" : "0rem",
+							}}
+						>
+							<VideoFilmstrip
+								mediaId={mediaAsset.id}
+								file={mediaAsset.file}
+								trimStart={element.trimStart}
+								duration={element.duration}
+								width={Math.max(1, elementWidth)}
+								height={trackHeight - (isSelected ? 8 : 0)}
+								className="size-full opacity-80"
+							/>
+						</div>
+					) : (
+						<div
+							className="absolute right-0 left-0"
+							style={{
+								backgroundImage: imageUrl ? `url(${imageUrl})` : "none",
+								backgroundRepeat: "repeat-x",
+								backgroundSize: `${tileWidth}px ${trackHeight}px`,
+								backgroundPosition: "left center",
+								pointerEvents: "none",
+								top: isSelected ? "0.25rem" : "0rem",
+								bottom: isSelected ? "0.25rem" : "0rem",
+							}}
+						/>
+					)}
 				</div>
 			</div>
 		);
@@ -452,6 +481,42 @@ function ElementContent({
 
 	return (
 		<span className="text-foreground/80 truncate text-xs">{element.name}</span>
+	);
+}
+
+function KeyframeMarkers({ element }: { element: TimelineElementType }) {
+	if (element.type !== "video" && element.type !== "image") {
+		return null;
+	}
+
+	const keyframes = element.transform.keyframes ?? [];
+	if (keyframes.length === 0 || element.duration <= 0) {
+		return null;
+	}
+
+	const visibleStart = element.trimStart;
+	const visibleEnd = element.trimStart + element.duration;
+	const visibleKeyframes = keyframes.filter(
+		(keyframe) => keyframe.time >= visibleStart && keyframe.time <= visibleEnd,
+	);
+	if (visibleKeyframes.length === 0) {
+		return null;
+	}
+
+	return (
+		<div className="pointer-events-none absolute inset-0 z-20">
+			{visibleKeyframes.map((keyframe) => {
+				const ratio = (keyframe.time - visibleStart) / element.duration;
+				const leftPercent = Math.max(0, Math.min(100, ratio * 100));
+				return (
+					<div
+						key={`kf-${element.id}-${keyframe.time}`}
+						className="absolute top-1 bottom-1 w-[2px] -translate-x-1/2 rounded-full bg-yellow-300/90 shadow-[0_0_4px_rgba(253,224,71,0.55)]"
+						style={{ left: `${leftPercent}%` }}
+					/>
+				);
+			})}
+		</div>
 	);
 }
 

@@ -23,6 +23,7 @@ import {
 	PasteCommand,
 	UpdateElementStartTimeCommand,
 	MoveElementCommand,
+	UpdateTrackNameCommand,
 } from "@/lib/commands/timeline";
 import { BatchCommand } from "@/lib/commands";
 import type { InsertElementParams } from "@/lib/commands/timeline/element/insert-element";
@@ -131,6 +132,17 @@ export class TimelineManager {
 
 	toggleTrackVisibility({ trackId }: { trackId: string }): void {
 		const command = new ToggleTrackVisibilityCommand(trackId);
+		this.editor.command.execute({ command });
+	}
+
+	updateTrackName({
+		trackId,
+		name,
+	}: {
+		trackId: string;
+		name: string;
+	}): void {
+		const command = new UpdateTrackNameCommand(trackId, name);
 		this.editor.command.execute({ command });
 	}
 
