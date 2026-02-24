@@ -38,6 +38,7 @@ export function AutoLiveClipView() {
 		strictSyncResult,
 		setSelectedVideoMediaId,
 		setSelectedMasterAudioMediaId,
+		applyStrictSyncCandidate,
 	} = useAutoLiveClipStore();
 	useEffect(() => {
 		if (!selectedVideoMediaId && videoAssets[0]) {
@@ -155,6 +156,62 @@ export function AutoLiveClipView() {
 									{strictSyncResult.audioTrimStart.toFixed(2)}s
 								</li>
 							</ul>
+							{strictSyncResult.syncCandidates.length > 0 && (
+								<div className="space-y-2 border-t pt-2">
+									<p className="text-xs font-medium">Sync match candidates</p>
+									<div className="space-y-1">
+										{strictSyncResult.syncCandidates.map((candidate) => {
+											const isActive =
+												Math.abs(
+													candidate.offsetSeconds -
+														strictSyncResult.syncOffsetSeconds,
+												) < 0.01;
+											const isNearTie =
+												candidate.scoreRatio >= 0.9 &&
+												!candidate.isDefault;
+											return (
+												<div
+													key={`sync-candidate-${candidate.rank}-${candidate.offsetSeconds}`}
+													className={`flex items-center justify-between gap-2 rounded border px-2 py-1 ${
+														isActive
+															? "border-primary bg-accent"
+															: "border-border"
+													}`}
+												>
+													<div className="min-w-0">
+														<div className="text-xs font-medium">
+															#{candidate.rank} {candidate.offsetSeconds.toFixed(2)}s
+															{candidate.isDefault ? " (default)" : ""}
+															{isNearTie ? " (near tie)" : ""}
+														</div>
+														<div className="text-muted-foreground text-[11px]">
+															Match score {(candidate.scoreRatio * 100).toFixed(1)}%
+														</div>
+													</div>
+													<Button
+														type="button"
+														size="sm"
+														variant={isActive ? "secondary" : "outline"}
+														disabled={isActive || busy}
+														onClick={() =>
+															applyStrictSyncCandidate({
+																editor,
+																syncOffsetSeconds: candidate.offsetSeconds,
+															})
+														}
+													>
+														Apply
+													</Button>
+												</div>
+											);
+										})}
+									</div>
+									<p className="text-muted-foreground text-[11px]">
+										If the default sounds wrong, try a near-tie candidate and
+										compare by ear.
+									</p>
+								</div>
+							)}
 						</div>
 					)}
 

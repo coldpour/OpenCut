@@ -11,6 +11,8 @@ interface TimelineStore {
 	toggleSnapping: () => void;
 	rippleEditingEnabled: boolean;
 	toggleRippleEditing: () => void;
+	showBeatMarkers: boolean;
+	toggleBeatMarkers: () => void;
 	clipboard: {
 		items: ClipboardItem[];
 	} | null;
@@ -34,6 +36,12 @@ export const useTimelineStore = create<TimelineStore>((set) => ({
 		set((state) => ({
 			rippleEditingEnabled: !state.rippleEditingEnabled,
 		}));
+	},
+
+	showBeatMarkers: true,
+
+	toggleBeatMarkers: () => {
+		set((state) => ({ showBeatMarkers: !state.showBeatMarkers }));
 	},
 
 	clipboard: null,

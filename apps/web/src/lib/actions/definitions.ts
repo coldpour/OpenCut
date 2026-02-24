@@ -126,6 +126,27 @@ export const ACTIONS = {
 	"toggle-bookmark": {
 		description: "Toggle bookmark at playhead",
 		category: "timeline",
+		defaultShortcuts: ["m"],
+	},
+	"nudge-selected-forward-fine": {
+		description: "Nudge selected elements forward by one frame",
+		category: "editing",
+		defaultShortcuts: ["alt+right"],
+	},
+	"nudge-selected-backward-fine": {
+		description: "Nudge selected elements backward by one frame",
+		category: "editing",
+		defaultShortcuts: ["alt+left"],
+	},
+	"nudge-selected-forward-coarse": {
+		description: "Nudge selected elements forward by 0.1s",
+		category: "editing",
+		defaultShortcuts: ["alt+shift+right"],
+	},
+	"nudge-selected-backward-coarse": {
+		description: "Nudge selected elements backward by 0.1s",
+		category: "editing",
+		defaultShortcuts: ["alt+shift+left"],
 	},
 	undo: {
 		description: "Undo",

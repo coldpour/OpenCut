@@ -7,6 +7,7 @@ import type {
 	AutoLiveClipOptions,
 	AutoLiveClipResolutionPreset,
 	AutoLiveClipSegmentPlan,
+	AutoLiveClipSyncCandidate,
 } from "@/types/auto-live-clip";
 import {
 	analyzeAutoLiveClip,
@@ -21,6 +22,7 @@ import type { MediaAsset } from "@/types/assets";
 
 interface AutoLiveClipStrictSyncResult extends SyncPlacement {
 	syncOffsetSeconds: number;
+	syncCandidates: AutoLiveClipSyncCandidate[];
 }
 
 interface AutoLiveClipState {
@@ -48,6 +50,13 @@ interface AutoLiveClipState {
 	selectSegment: (segmentId: string | null) => void;
 	setAnalysis: (analysis: AutoLiveClipAnalysis | null) => void;
 	strictSyncTimeline: ({ editor }: { editor: EditorCore }) => Promise<void>;
+	applyStrictSyncCandidate: ({
+		editor,
+		syncOffsetSeconds,
+	}: {
+		editor: EditorCore;
+		syncOffsetSeconds: number;
+	}) => void;
 	analyzeAndBuildTimeline: ({ editor }: { editor: EditorCore }) => Promise<void>;
 	exportPreset: ({
 		editor,
@@ -133,6 +142,30 @@ function triggerDownload({
 	document.body.removeChild(anchor);
 }
 
+function buildStrictSyncTimeline({
+	editor,
+	videoAsset,
+	masterAudioAsset,
+	syncOffsetSeconds,
+}: {
+	editor: EditorCore;
+	videoAsset: MediaAsset;
+	masterAudioAsset: MediaAsset;
+	syncOffsetSeconds: number;
+}): {
+	placement: SyncPlacement;
+} {
+	const result = applyStrictSyncToTracks({
+		existingTracks: editor.timeline.getTracks(),
+		videoAsset,
+		masterAudioAsset,
+		syncOffsetSeconds,
+	});
+	editor.timeline.updateTracks(result.tracks);
+	editor.playback.seek({ time: result.placement.videoTimelineStart });
+	return { placement: result.placement };
+}
+
 export const useAutoLiveClipStore = create<AutoLiveClipState>((set, get) => ({
 	selectedVideoMediaId: null,
 	selectedMasterAudioMediaId: null,
@@ -162,6 +195,43 @@ export const useAutoLiveClipStore = create<AutoLiveClipState>((set, get) => ({
 			analysis,
 			selectedSegmentId: analysis?.segments[0]?.segmentId ?? null,
 		}),
+
+	applyStrictSyncCandidate: ({ editor, syncOffsetSeconds }) => {
+		try {
+			const assets = editor.media.getAssets();
+			const videoAsset = getMediaById({
+				assets,
+				mediaId: get().selectedVideoMediaId,
+				expectedType: "video",
+			});
+			const masterAudioAsset = getMediaById({
+				assets,
+				mediaId: get().selectedMasterAudioMediaId,
+				expectedType: "audio",
+			});
+			const { placement } = buildStrictSyncTimeline({
+				editor,
+				videoAsset,
+				masterAudioAsset,
+				syncOffsetSeconds,
+			});
+			const analysis = get().analysis;
+			set({
+				strictSyncResult: {
+					syncOffsetSeconds,
+					syncCandidates: analysis?.syncCandidates ?? [],
+					...placement,
+				},
+				errorMessage: null,
+			});
+			toast.success(`Applied sync candidate (${syncOffsetSeconds.toFixed(2)}s)`);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : "Applying sync candidate failed";
+			set({ errorMessage });
+			toast.error(errorMessage);
+		}
+	},
 
 	strictSyncTimeline: async ({ editor }) => {
 		try {
@@ -212,14 +282,18 @@ export const useAutoLiveClipStore = create<AutoLiveClipState>((set, get) => ({
 			}
 
 			set({ progressStep: "Building strict synced timeline..." });
-			const result = applyStrictSyncToTracks({
-				existingTracks: editor.timeline.getTracks(),
+			const { placement } = buildStrictSyncTimeline({
+				editor,
 				videoAsset,
 				masterAudioAsset,
 				syncOffsetSeconds: analysis.syncOffsetSeconds,
 			});
-			editor.timeline.updateTracks(result.tracks);
-			editor.playback.seek({ time: result.placement.videoTimelineStart });
+			editor.scenes.setActiveSceneAutoLiveClip({
+				autoLiveClip: {
+					analysis,
+					lastBuiltAt: new Date().toISOString(),
+				},
+			});
 
 			set({
 				isAnalyzing: false,
@@ -229,7 +303,8 @@ export const useAutoLiveClipStore = create<AutoLiveClipState>((set, get) => ({
 				selectedSegmentId: analysis.segments[0]?.segmentId ?? null,
 				strictSyncResult: {
 					syncOffsetSeconds: analysis.syncOffsetSeconds,
-					...result.placement,
+					syncCandidates: analysis.syncCandidates ?? [],
+					...placement,
 				},
 			});
 			toast.success("Strict sync timeline generated");

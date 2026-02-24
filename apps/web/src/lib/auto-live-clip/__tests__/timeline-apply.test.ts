@@ -28,6 +28,11 @@ describe("applyAutoLiveClipAnalysisToTracks", () => {
 		const analysis: AutoLiveClipAnalysis = {
 			analysisId: "analysis-1",
 			syncOffsetSeconds: 0.25,
+			syncCandidates: [],
+			beatMarkers: {
+				videoSeconds: [],
+				masterAudioSeconds: [],
+			},
 			segments: [
 				{
 					segmentId: "seg-1",

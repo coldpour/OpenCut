@@ -194,8 +194,10 @@ function ToolbarRightSection({
 	const {
 		snappingEnabled,
 		rippleEditingEnabled,
+		showBeatMarkers,
 		toggleSnapping,
 		toggleRippleEditing,
+		toggleBeatMarkers,
 	} = useTimelineStore();
 
 	return (
@@ -214,6 +216,16 @@ function ToolbarRightSection({
 					tooltip="Ripple editing"
 					onClick={() => toggleRippleEditing()}
 				/>
+
+				<Button
+					variant={showBeatMarkers ? "secondary" : "text"}
+					size="sm"
+					type="button"
+					onClick={() => toggleBeatMarkers()}
+					className="h-8 rounded-sm px-2 text-xs"
+				>
+					Beats
+				</Button>
 			</TooltipProvider>
 
 			<div className="bg-border mx-1 h-6 w-px" />

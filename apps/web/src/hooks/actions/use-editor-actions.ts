@@ -6,6 +6,7 @@ import { useEditor } from "../use-editor";
 import { useElementSelection } from "../timeline/element/use-element-selection";
 import { getElementsAtTime } from "@/lib/timeline";
 import { useAutoLiveClipStore } from "@/stores/auto-live-clip-store";
+import { buildNudgeElementUpdates } from "@/lib/timeline/nudge-selected-elements";
 
 export function useEditorActions() {
 	const editor = useEditor();
@@ -251,6 +252,59 @@ export function useEditorActions() {
 		"toggle-bookmark",
 		() => {
 			editor.scenes.toggleBookmark({ time: editor.playback.getCurrentTime() });
+		},
+		undefined,
+	);
+
+	const nudgeSelected = (deltaSeconds: number) => {
+		if (selectedElements.length === 0) {
+			return;
+		}
+		const result = buildNudgeElementUpdates({
+			tracks: editor.timeline.getTracks(),
+			selectedElements,
+			deltaSeconds,
+		});
+		if (result.updates.length === 0 || Math.abs(result.appliedDeltaSeconds) <= 1e-9) {
+			return;
+		}
+		editor.timeline.updateElements({
+			updates: result.updates.map((update) => ({
+				trackId: update.trackId,
+				elementId: update.elementId,
+				updates: { startTime: update.startTime },
+			})),
+		});
+	};
+
+	useActionHandler(
+		"nudge-selected-forward-fine",
+		() => {
+			nudgeSelected(1 / activeProject.settings.fps);
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"nudge-selected-backward-fine",
+		() => {
+			nudgeSelected(-(1 / activeProject.settings.fps));
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"nudge-selected-forward-coarse",
+		() => {
+			nudgeSelected(0.1);
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"nudge-selected-backward-coarse",
+		() => {
+			nudgeSelected(-0.1);
 		},
 		undefined,
 	);

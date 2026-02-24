@@ -2,6 +2,7 @@
 
 import { useEditor } from "@/hooks/use-editor";
 import { useAssetsPanelStore } from "@/stores/assets-panel-store";
+import { useTimelineStore } from "@/stores/timeline-store";
 import AudioWaveform from "./audio-waveform";
 import { VideoFilmstrip } from "./video-filmstrip";
 import { useTimelineElementResize } from "@/hooks/timeline/element/use-element-resize";
@@ -300,6 +301,7 @@ function ElementInner({
 				)}
 			</button>
 			<KeyframeMarkers element={element} />
+			<ClipTimelineMarkers element={element} />
 
 			{isSelected && (
 				<>
@@ -481,6 +483,67 @@ function ElementContent({
 
 	return (
 		<span className="text-foreground/80 truncate text-xs">{element.name}</span>
+	);
+}
+
+function ClipTimelineMarkers({ element }: { element: TimelineElementType }) {
+	const editor = useEditor();
+	const { showBeatMarkers } = useTimelineStore();
+	const activeScene = editor.scenes.getActiveScene();
+
+	if (element.duration <= 0) {
+		return null;
+	}
+
+	const timelineStart = element.startTime;
+	const timelineEnd = element.startTime + element.duration;
+	const sourceStart = element.trimStart;
+	const sourceEnd = element.trimStart + element.duration;
+
+	const bookmarkTimes = (activeScene.bookmarks ?? []).filter(
+		(time) => time >= timelineStart && time <= timelineEnd,
+	);
+
+	const beatMarkers = activeScene.autoLiveClip?.analysis.beatMarkers;
+	const sourceBeatTimes =
+		showBeatMarkers && (element.type === "audio" || element.type === "video")
+			? element.type === "audio"
+				? (beatMarkers?.masterAudioSeconds ?? [])
+				: (beatMarkers?.videoSeconds ?? [])
+			: [];
+	const visibleBeatTimes = sourceBeatTimes.filter(
+		(time) => time >= sourceStart && time <= sourceEnd,
+	);
+
+	if (bookmarkTimes.length === 0 && visibleBeatTimes.length === 0) {
+		return null;
+	}
+
+	return (
+		<div className="pointer-events-none absolute inset-0 z-20">
+			{visibleBeatTimes.map((time) => {
+				const ratio = (time - sourceStart) / element.duration;
+				const leftPercent = Math.max(0, Math.min(100, ratio * 100));
+				return (
+					<div
+						key={`beat-${element.id}-${time}`}
+						className="absolute top-0 bottom-0 w-px -translate-x-1/2 bg-cyan-200/55"
+						style={{ left: `${leftPercent}%` }}
+					/>
+				);
+			})}
+			{bookmarkTimes.map((time) => {
+				const ratio = (time - timelineStart) / element.duration;
+				const leftPercent = Math.max(0, Math.min(100, ratio * 100));
+				return (
+					<div
+						key={`bookmark-marker-${element.id}-${time}`}
+						className="absolute top-0 bottom-0 w-[2px] -translate-x-1/2 bg-primary/80"
+						style={{ left: `${leftPercent}%` }}
+					/>
+				);
+			})}
+		</div>
 	);
 }
 

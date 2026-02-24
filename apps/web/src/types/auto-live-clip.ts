@@ -39,9 +39,25 @@ export interface AutoLiveClipOptions {
 export interface AutoLiveClipAnalysis {
 	analysisId: string;
 	syncOffsetSeconds: number;
+	syncCandidates: AutoLiveClipSyncCandidate[];
+	beatMarkers: AutoLiveClipBeatMarkers;
 	segments: AutoLiveClipSegmentPlan[];
 	generatedAt: string;
 	options: AutoLiveClipOptions;
+}
+
+export interface AutoLiveClipSyncCandidate {
+	offsetSeconds: number;
+	score: number;
+	scoreRatio: number;
+	overlapSamples: number;
+	rank: number;
+	isDefault: boolean;
+}
+
+export interface AutoLiveClipBeatMarkers {
+	videoSeconds: number[];
+	masterAudioSeconds: number[];
 }
 
 export interface AutoLiveClipSceneMetadata {
@@ -52,6 +68,18 @@ export interface AutoLiveClipSceneMetadata {
 export interface AutoLiveClipAnalyzeResponse {
 	analysis_id: string;
 	sync_offset_seconds: number;
+	sync_candidates?: Array<{
+		lag_seconds: number;
+		score: number;
+		score_ratio: number;
+		overlap_samples: number;
+		rank: number;
+		is_default: boolean;
+	}>;
+	beat_markers?: {
+		video_seconds: number[];
+		master_audio_seconds: number[];
+	};
 	segments: Array<{
 		segment_id: string;
 		start: number;

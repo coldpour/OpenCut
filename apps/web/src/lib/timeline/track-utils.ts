@@ -280,25 +280,10 @@ export function enforceMainTrackStart({
 	requestedStartTime: number;
 	excludeElementId?: string;
 }): number {
-	const mainTrack = getMainTrack({ tracks });
-	if (!mainTrack || mainTrack.id !== targetTrackId) {
-		return requestedStartTime;
-	}
-
-	const earliestElement = getEarliestMainTrackElement({
-		tracks,
-		excludeElementId,
-	});
-
-	if (!earliestElement) {
-		return 0;
-	}
-
-	// main track must always start at time 0; if this element would
-	// become the earliest, pin it to the start
-	if (requestedStartTime <= earliestElement.startTime) {
-		return 0;
-	}
-
+	// Auto Live Clip strict sync needs a black leader before the first video clip,
+	// so main track elements must be allowed to start after 0.
+	void tracks;
+	void targetTrackId;
+	void excludeElementId;
 	return requestedStartTime;
 }

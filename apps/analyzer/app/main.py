@@ -11,7 +11,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from app.audio_sync import estimate_sync_offset_from_wav_files
+from app.audio_sync import (
+    estimate_sync_candidates_from_wav_files,
+    estimate_sync_offset_from_wav_files,
+)
+from app.beats import detect_beat_markers_from_wav_file
 from app.cache import AnalyzerCache
 from app.ffmpeg_utils import extract_audio_wav, media_duration_seconds
 from app.models import AnalyzeOptions
@@ -182,7 +186,7 @@ class AnalyzerRequestHandler(BaseHTTPRequestHandler):
             analysis_key = self.cache.hash_bytes(
                 _json_bytes(
                     {
-                        "analyzer_pipeline_version": 2,
+                        "analyzer_pipeline_version": 5,
                         "video_hash": video_hash,
                         "master_audio_hash": master_audio_hash,
                         "options": asdict(options),
@@ -314,8 +318,8 @@ class AnalyzerRequestHandler(BaseHTTPRequestHandler):
 
         video_wav = work_dir / "video.wav"
         master_wav = work_dir / "master.wav"
-        extract_audio_wav(video_path, video_wav, sample_rate=2000)
-        extract_audio_wav(master_audio_path, master_wav, sample_rate=2000)
+        extract_audio_wav(video_path, video_wav, sample_rate=4000)
+        extract_audio_wav(master_audio_path, master_wav, sample_rate=4000)
 
         video_duration = media_duration_seconds(video_path)
         master_duration = media_duration_seconds(master_audio_path)
@@ -329,6 +333,33 @@ class AnalyzerRequestHandler(BaseHTTPRequestHandler):
             master_wav_path=master_wav,
             max_shift_seconds=dynamic_max_shift_seconds,
         )
+        video_beat_markers = detect_beat_markers_from_wav_file(wav_path=video_wav)
+        master_beat_markers = detect_beat_markers_from_wav_file(wav_path=master_wav)
+        sync_candidates = estimate_sync_candidates_from_wav_files(
+            video_wav_path=video_wav,
+            master_wav_path=master_wav,
+            max_shift_seconds=dynamic_max_shift_seconds,
+            limit=4,
+        )
+        if not any(
+            abs(float(candidate.get("lag_seconds", 0.0)) - sync_offset_seconds) < 0.35
+            for candidate in sync_candidates
+        ):
+            sync_candidates.insert(
+                0,
+                {
+                    "lag_seconds": sync_offset_seconds,
+                    "score": 0.0,
+                    "score_ratio": 1.0,
+                    "overlap_samples": 0,
+                    "coarse_lag_seconds": sync_offset_seconds,
+                },
+            )
+        for index, candidate in enumerate(sync_candidates):
+            candidate["is_default"] = (
+                abs(float(candidate.get("lag_seconds", 0.0)) - sync_offset_seconds) < 0.35
+            )
+            candidate["rank"] = index + 1
         target_duration = min(video_duration, master_duration)
         if options.clip_mode == "minutes" and options.max_clip_minutes:
             target_duration = min(target_duration, float(options.max_clip_minutes) * 60.0)
@@ -344,6 +375,23 @@ class AnalyzerRequestHandler(BaseHTTPRequestHandler):
             "analysis_id": uuid.uuid4().hex,
             "analysis_key": analysis_key,
             "sync_offset_seconds": round(sync_offset_seconds, 6),
+            "sync_candidates": [
+                {
+                    "lag_seconds": round(float(candidate.get("lag_seconds", 0.0)), 6),
+                    "score": round(float(candidate.get("score", 0.0)), 6),
+                    "score_ratio": round(float(candidate.get("score_ratio", 0.0)), 6),
+                    "overlap_samples": int(candidate.get("overlap_samples", 0)),
+                    "rank": int(candidate.get("rank", 0)),
+                    "is_default": bool(candidate.get("is_default", False)),
+                }
+                for candidate in sync_candidates
+            ],
+            "beat_markers": {
+                "video_seconds": [round(float(value), 6) for value in video_beat_markers],
+                "master_audio_seconds": [
+                    round(float(value), 6) for value in master_beat_markers
+                ],
+            },
             "segments": [segment.to_dict() for segment in segments],
             "artifacts": {
                 "video_path": str(video_path),
@@ -357,6 +405,11 @@ class AnalyzerRequestHandler(BaseHTTPRequestHandler):
         return {
             "analysis_id": payload.get("analysis_id"),
             "sync_offset_seconds": payload.get("sync_offset_seconds", 0.0),
+            "sync_candidates": payload.get("sync_candidates", []),
+            "beat_markers": payload.get(
+                "beat_markers",
+                {"video_seconds": [], "master_audio_seconds": []},
+            ),
             "segments": payload.get("segments", []),
             "artifacts": {
                 "analysis_id": payload.get("analysis_id"),

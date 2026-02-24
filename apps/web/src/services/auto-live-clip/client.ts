@@ -26,6 +26,18 @@ function toAnalysis({
 	return {
 		analysisId: response.analysis_id,
 		syncOffsetSeconds: response.sync_offset_seconds,
+		syncCandidates: (response.sync_candidates ?? []).map((candidate) => ({
+			offsetSeconds: candidate.lag_seconds,
+			score: candidate.score,
+			scoreRatio: candidate.score_ratio,
+			overlapSamples: candidate.overlap_samples,
+			rank: candidate.rank,
+			isDefault: candidate.is_default,
+		})),
+		beatMarkers: {
+			videoSeconds: response.beat_markers?.video_seconds ?? [],
+			masterAudioSeconds: response.beat_markers?.master_audio_seconds ?? [],
+		},
 		generatedAt: new Date().toISOString(),
 		options,
 		segments: response.segments.map((segment) => ({
